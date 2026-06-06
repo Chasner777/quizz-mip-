@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz MIP</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--purple:#7B2D8B;--teal:#4ABCBF;--dark:#0f0f0f;--light:#f5f5f0;--gold:#F4C842;--correct:#3DD68C;--wrong:#FF5252}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--dark);font-family:'DM Sans',sans-serif;color:var(--light);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(74,188,191,.15) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
+.container{position:relative;z-index:1;max-width:780px;margin:0 auto;padding:24px 16px 60px}
+.header{text-align:center;padding:32px 0 24px}
+.logo-badge{display:inline-block;background:var(--purple);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:3px;padding:6px 18px;border-radius:2px;margin-bottom:16px}
+.header h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.4rem,8vw,4rem);letter-spacing:2px;line-height:1}
+.header h1 span{color:var(--teal)}
+.header p{margin-top:10px;color:rgba(255,255,255,.55);font-size:.95rem}
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.05);border-radius:10px;padding:4px;margin-bottom:24px}
+.tab-btn{flex:1;padding:10px;border:none;background:transparent;color:rgba(255,255,255,.45);font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:1.5px;border-radius:8px;cursor:pointer;transition:all .2s}
+.tab-btn.active{background:var(--purple);color:#fff}
+.panel{display:none}
+.panel.active{display:block;animation:slideIn .35s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.name-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px 28px;text-align:center}
+.name-card h2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;margin-bottom:8px}
+.name-card p{color:rgba(255,255,255,.5);font-size:.9rem;margin-bottom:24px}
+.name-input{width:100%;padding:14px 18px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:10px;color:#fff;font-family:'DM Sans',sans-serif;font-size:1rem;outline:none;transition:border-color .2s;text-align:center}
+.name-input:focus{border-color:var(--teal)}
+.name-input::placeholder{color:rgba(255,255,255,.3)}
+.start-intro{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px;margin-bottom:24px;text-align:left}
+.start-intro h3{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:2px;color:var(--teal);margin-bottom:10px}
+.start-intro ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.start-intro li{display:flex;gap:10px;font-size:.88rem;color:rgba(255,255,255,.65)}
+.start-intro li::before{content:'→';color:var(--purple);font-weight:700;flex-shrink:0}
+.start-btn{margin-top:16px;width:100%;padding:15px;background:linear-gradient(135deg,var(--teal),#2AA8AB);border:none;border-radius:10px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:3px;cursor:pointer;transition:opacity .2s,transform .2s}
+.start-btn:hover{opacity:.88;transform:translateY(-1px)}
+.progress-wrap{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.progress-bar{flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--teal));border-radius:99px;transition:width .5s ease}
+.progress-label{font-size:.8rem;color:rgba(255,255,255,.45);white-space:nowrap}
+.question-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px 24px 24px}
+.q-number{font-family:'Bebas Neue',sans-serif;font-size:.82rem;letter-spacing:3px;color:var(--teal);margin-bottom:10px}
+.q-text{font-size:1.15rem;font-weight:700;line-height:1.45;margin-bottom:24px;color:#fff}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.options{grid-template-columns:1fr}}
+.option-btn{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--light);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;padding:13px 14px;text-align:left;cursor:pointer;transition:all .2s;display:flex;align-items:flex-start;gap:10px;line-height:1.4}
+.option-btn .letter{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,.1);font-family:'Bebas Neue',sans-serif;font-size:.9rem;flex-shrink:0}
+.option-btn:not([disabled]):hover{border-color:var(--teal);background:rgba(74,188,191,.12);transform:translateY(-1px)}
+.option-btn.correct{border-color:var(--correct);background:rgba(61,214,140,.15);color:var(--correct)}
+.option-btn.correct .letter{background:var(--correct);color:#fff}
+.option-btn.wrong{border-color:var(--wrong);background:rgba(255,82,82,.12);color:var(--wrong)}
+.option-btn.wrong .letter{background:var(--wrong);color:#fff}
+.option-btn[disabled]{cursor:default}
+.feedback{margin-top:18px;padding:13px 16px;border-radius:10px;font-size:.88rem;line-height:1.5;display:none;animation:fadeUp .3s ease}
+.feedback.show{display:block}
+.feedback.correct-fb{background:rgba(61,214,140,.12);border:1px solid rgba(61,214,140,.3);color:var(--correct)}
+.feedback.wrong-fb{background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.25);color:#ff8a8a}
+.feedback strong{display:block;margin-bottom:4px;font-size:.95rem}
+.next-btn{display:none;margin-top:18px;width:100%;padding:14px;background:linear-gradient(135deg,var(--purple),#9B3DAB);border:none;border-radius:10px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;transition:opacity .2s}
+.next-btn:hover{opacity:.88}
+.next-btn.show{display:block;animation:fadeUp .3s ease}
+.score-section{text-align:center}
+.score-circle{width:130px;height:130px;border-radius:50%;background:conic-gradient(var(--teal) var(--pct,0%),rgba(255,255,255,.08) 0);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;position:relative}
+.score-circle::after{content:'';position:absolute;inset:10px;border-radius:50%;background:var(--dark)}
+.score-num{position:relative;z-index:1;font-family:'Bebas Neue',sans-serif;font-size:2.6rem;color:var(--teal);line-height:1}
+.score-num small{display:block;font-size:.85rem;color:rgba(255,255,255,.5);font-family:'DM Sans',sans-serif}
+.score-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;margin-bottom:8px}
+.score-msg{color:rgba(255,255,255,.6);font-size:.92rem;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.6}
+.score-breakdown{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px;margin-bottom:20px;text-align:left}
+.breakdown-title{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:2px;color:var(--teal);margin-bottom:12px}
+.breakdown-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem}
+.breakdown-item:last-child{border-bottom:none}
+.breakdown-item span:last-child{font-weight:700;padding:2px 10px;border-radius:6px;font-size:.8rem}
+.ok{background:rgba(61,214,140,.15);color:var(--correct)}
+.ko{background:rgba(255,82,82,.12);color:var(--wrong)}
+.score-actions{display:flex;gap:10px;flex-wrap:wrap}
+.score-actions button{flex:1;min-width:140px;padding:13px 20px;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;transition:opacity .2s}
+.score-actions button:hover{opacity:.85}
+.btn-restart{background:linear-gradient(135deg,var(--purple),#9B3DAB);color:#fff}
+.btn-leaderboard{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)!important;color:var(--light)}
+.leaderboard-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px}
+.lb-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.lb-header h2{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px}
+.lb-refresh{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:.82rem;padding:7px 14px;cursor:pointer;transition:background .2s}
+.lb-refresh:hover{background:rgba(74,188,191,.15)}
+.lb-empty{text-align:center;color:rgba(255,255,255,.35);font-size:.9rem;padding:40px 0}
+.lb-row{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:10px;margin-bottom:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;width:30px;text-align:center;color:rgba(255,255,255,.35)}
+.lb-name{flex:1;font-weight:600;font-size:.95rem}
+.lb-score{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--teal)}
+.lb-pct{font-size:.78rem;color:rgba(255,255,255,.4);margin-left:4px}
+.lb-date{font-size:.75rem;color:rgba(255,255,255,.3)}
+.lb-bar-wrap{height:3px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:6px}
+.lb-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--purple),var(--teal))}
+.lb-clear{margin-top:16px;width:100%;padding:10px;background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.2);border-radius:8px;color:var(--wrong);font-family:'DM Sans',sans-serif;font-size:.82rem;cursor:pointer}
+.lb-clear:hover{background:rgba(255,82,82,.18)}
+.kahoot-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px}
+.kahoot-card h2{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;margin-bottom:6px}
+.kahoot-intro{color:rgba(255,255,255,.5);font-size:.88rem;margin-bottom:20px;line-height:1.6}
+.kahoot-intro a{color:var(--teal)}
+.kahoot-q{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px;margin-bottom:12px}
+.kq-num{font-family:'Bebas Neue',sans-serif;font-size:.78rem;letter-spacing:2px;color:var(--teal);margin-bottom:6px}
+.kq-text{font-weight:700;font-size:.95rem;margin-bottom:12px;color:#fff}
+.kq-options{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.kq-opt{padding:8px 12px;border-radius:7px;font-size:.82rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.kq-opt.answer{background:rgba(61,214,140,.12);border-color:rgba(61,214,140,.3);color:var(--correct);font-weight:600}
+.kq-opt .tag{font-size:.7rem;font-weight:700;margin-right:4px;opacity:.7}
+.copy-all-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),#D4A017);border:none;border-radius:10px;color:#1a1a1a;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;margin-bottom:8px;transition:opacity .2s}
+.copy-all-btn:hover{opacity:.88}
+.copied-badge{display:none;color:var(--correct);font-size:.85rem;text-align:center;margin-bottom:14px}
+.copied-badge.show{display:block}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo-badge">ÉGLISE DES JEUNES PRODIGES BRUXELLES</div>
+    <h1>QUIZ <span>MIP</span></h1>
+    <p>Ministère de l'Intégration Prophétique</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-quiz" onclick="showTab('quiz',this)">🎯 QUIZ</button>
+    <button class="tab-btn" id="tab-leaderboard" onclick="showTab('leaderboard',this)">🏆 CLASSEMENT</button>
+    <button class="tab-btn" id="tab-kahoot" onclick="showTab('kahoot',this)">📋 KAHOOT</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="panel active" id="panel-quiz">
+    <div id="nameEntry">
+      <div class="name-card">
+        <h2>TON PRÉNOM</h2>
+        <p>Il apparaîtra dans le classement partagé</p>
+        <div class="start-intro">
+          <h3>CE QUI SERA TESTÉ</h3>
+          <ul>
+            <li>Vision de l'EJP & acronyme I.M.P.A.C.T</li>
+            <li>Mission du MIP & Actes 2:42</li>
+            <li>Les 5 pôles et leurs rôles</li>
+            <li>Valeurs : C.H.R.I.S.T + Amour + Fiabilité</li>
+            <li>Code PVCI & Anti-dispersion</li>
+          </ul>
+        </div>
+        <input class="name-input" id="playerName" type="text" placeholder="Ton prénom ici…" maxlength="30" onkeydown="if(event.key==='Enter')startQuiz()"/>
+        <button class="start-btn" onclick="startQuiz()">COMMENCER LE QUIZ →</button>
+      </div>
+    </div>
+    <div id="quizGame" style="display:none">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">1 / 20</div>
+      </div>
+      <div class="question-card" id="questionCard">
+        <div class="q-number" id="qNumber"></div>
+        <div class="q-text" id="qText"></div>
+        <div class="options" id="optionsGrid"></div>
+        <div class="feedback" id="feedback"></div>
+        <button class="next-btn" id="nextBtn" onclick="nextQuestion()">QUESTION SUIVANTE →</button>
+      </div>
+    </div>
+    <div id="scoreSection" style="display:none" class="score-section">
+      <div class="score-circle" id="scoreCircle">
+        <div class="score-num" id="scoreNum">0<small>/20</small></div>
+      </div>
+      <div class="score-title" id="scoreTitle"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+      <div class="score-breakdown" id="scoreBreakdown"></div>
+      <div class="score-actions">
+        <button class="btn-restart" onclick="restartQuiz()">↩ RECOMMENCER</button>
+        <button class="btn-leaderboard" onclick="showTab('leaderboard',document.getElementById('tab-leaderboard'))">🏆 CLASSEMENT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="panel" id="panel-leaderboard">
+    <div class="leaderboard-card">
+      <div class="lb-header">
+        <h2>🏆 CLASSEMENT</h2>
+        <button class="lb-refresh" onclick="renderLeaderboard()">↻ Actualiser</button>
+      </div>
+      <div id="lbContent"><div class="lb-empty">Aucun score pour l'instant.<br>Fais le quiz pour apparaître ici !</div></div>
+      <button class="lb-clear" onclick="clearLeaderboard()">🗑 Effacer tous les scores</button>
+    </div>
+  </div>
+
+  <!-- KAHOOT -->
+  <div class="panel" id="panel-kahoot">
+    <div class="kahoot-card">
+      <h2>📋 EXPORT KAHOOT</h2>
+      <p class="kahoot-intro">
+        Va sur <a href="https://kahoot.com" target="_blank">kahoot.com</a> → "Create" → "Quiz".
+        Copie chaque question avec ses 4 réponses (la bonne est en <span style="color:var(--correct)">vert ✓</span>).<br><br>
+        Ou clique ci-dessous pour tout copier en une fois dans un format texte prêt à coller.
+      </p>
+      <button class="copy-all-btn" onclick="copyAllKahoot()">📋 COPIER TOUTES LES QUESTIONS</button>
+      <div class="copied-badge" id="copiedBadge">✓ Copié dans le presse-papiers !</div>
+      <div id="kahootList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q=[
+  {theme:"Vision EJP",q:"Quelle est la vision de l'EJP ?",options:["Former des pasteurs et évangélistes célèbres à Bruxelles","Créer une génération de piliers et partenaires de Dieu vivant l'I.M.P.A.C.T dans le Benelux","Organiser des cultes chaque semaine pour attirer du monde","Développer un réseau d'églises dans toute l'Europe"],correct:1,expl:"La vision de l'EJP : participer à la création d'une génération de piliers et partenaires de Dieu qui vivent l'I.M.P.A.C.T, à Bruxelles et dans le Benelux."},
+  {theme:"I.M.P.A.C.T",q:"Que signifie le « I » dans I.M.P.A.C.T ?",options:["Imiter les apôtres","Intercéder pour les nations","Influencer positivement son environnement","Intégrer les nouveaux membres"],correct:2,expl:"I = Influencer positivement leur environnement."},
+  {theme:"I.M.P.A.C.T",q:"Que signifie le « M » dans I.M.P.A.C.T ?",options:["Multiplier les membres","Manifester les standards divins","Motiver les jeunes à servir","Mémoriser les versets bibliques"],correct:1,expl:"M = Manifester les standards divins."},
+  {theme:"I.M.P.A.C.T",q:"Que signifie le « P » dans I.M.P.A.C.T ?",options:["Prier sans cesse","Partager le règne de Dieu et la Bonne Nouvelle du Royaume","Prêcher dans les rues","Présider les réunions"],correct:1,expl:"P = Partager le règne de Dieu et la Bonne nouvelle du Royaume."},
+  {theme:"I.M.P.A.C.T",q:"Que signifie le « A » dans I.M.P.A.C.T ?",options:["Adorer Dieu en esprit","Avancer dans la foi","Aimer Dieu et les autres en actes et en vérité","Annoncer l'évangile aux nations"],correct:2,expl:"A = Aimer Dieu et les autres en actes et en vérité."},
+  {theme:"I.M.P.A.C.T",q:"Que signifie le « C » dans I.M.P.A.C.T ?",options:["Construire l'église locale","Célébrer Dieu et L'honorer par leur vie","Consolider les croyants","Conduire des études bibliques"],correct:1,expl:"C = Célébrer Dieu et L'honorer par leur vie."},
+  {theme:"I.M.P.A.C.T",q:"Que signifie le « T » dans I.M.P.A.C.T ?",options:["Témoigner dans les rues","Transformer les vies","Transmettre la foi aux enfants","Trouver les brebis perdues"],correct:1,expl:"T = Transformer les vies."},
+  {theme:"Mission MIP",q:"Quelle est la mission principale du MIP ?",options:["Organiser des cultes et concerts","Amener chaque âme à trouver sa place dans la famille EJP et accompagner sa croissance spirituelle","Former des leaders pour planter des églises","Gérer les finances de l'EJP"],correct:1,expl:"Mission : amener chaque âme à trouver et occuper sa place, et favoriser son épanouissement physique, professionnel, social et spirituel."},
+  {theme:"Mission MIP",q:"Sur quel verset biblique se base la vision du MIP ?",options:["La grande commission : aller et faire des disciples","Actes 2:42 — persévérer dans l'enseignement des apôtres, la communion, la fraction du pain et les prières","Aimer son prochain comme soi-même","Chercher premièrement le royaume de Dieu"],correct:1,expl:"Actes 2:42 : «Ils persévéraient dans l'enseignement des apôtres, dans la communion fraternelle, dans la fraction du pain, et dans les prières.»"},
+  {theme:"Intégration",q:"L'intégration sociale peut concerner :",options:["Uniquement les nouveaux arrivants","Uniquement les nouveaux convertis","Les nouveaux ET les personnes déjà dans la communauté mais pas pleinement intégrées","Seulement les jeunes de moins de 18 ans"],correct:2,expl:"L'intégration concerne aussi ceux déjà dans la communauté mais pas pleinement intégrés."},
+  {theme:"Organisation",q:"En combien de pôles est subdivisé le MIP ?",options:["3 pôles","4 pôles","5 pôles","6 pôles"],correct:2,expl:"5 pôles : Suivi & Accompagnement, Administration, Intercession, Organisation et Accueil — tous prophétiques !"},
+  {theme:"Organisation",q:"Quel pôle accueille les jeunes lors des cultes et événements ?",options:["Suivi & Accompagnement Prophétique","Organisation Prophétique","Intercession Prophétique","Accueil Prophétique"],correct:3,expl:"Le pôle Accueil Prophétique est chargé de l'accueil lors des cultes et événements de l'EJP."},
+  {theme:"Organisation",q:"Quel pôle assure le suivi personnalisé et veille à l'évolution spirituelle de chaque jeune ?",options:["Administration Prophétique","Suivi & Accompagnement Prophétique","Organisation Prophétique","Intercession Prophétique"],correct:1,expl:"Le pôle Suivi & Accompagnement Prophétique coordonne le parcours et veille à l'évolution spirituelle et émotionnelle de chaque jeune."},
+  {theme:"Organisation",q:"Quel pôle veille à la santé spirituelle du ministère et bâtit des conseillers fervents dans la prière ?",options:["Administration Prophétique","Organisation Prophétique","Intercession Prophétique","Accueil Prophétique"],correct:2,expl:"Le pôle Intercession Prophétique bâtit des conseillers fervents dans la prière et enracinés dans la Parole."},
+  {theme:"Organisation",q:"Le pôle Organisation Prophétique a pour rôle de :",options:["Gérer les finances","Organiser tous les évènements et planifier les temps de communion fraternelle","Former les nouveaux membres","Assurer l'accueil lors des cultes"],correct:1,expl:"Organisation Prophétique : organiser tous les événements et planifier les temps de communion fraternelle du ministère."},
+  {theme:"Valeurs",q:"Laquelle de ces listes représente les valeurs du MIP ?",options:["Foi, Espérance, Charité, Discipline, Zèle","Amour, Service, Respect, Fiabilité, Humilité, Consécration, Intégrité, Transparence","Prière, Jeûne, Évangélisation, Louange, Unité","Excellence, Créativité, Innovation, Leadership, Vision"],correct:1,expl:"Les valeurs du MIP : Amour, Service, Respect, Fiabilité, Humilité, Consécration, Intégrité et Transparence — résumées par C.H.R.I.S.T + Amour + Fiabilité."},
+  {theme:"Valeurs C.H.R.I.S.T",q:"Que signifie chaque lettre dans C.H.R.I.S.T ?",options:["Charité, Honneur, Respect, Identité, Sagesse, Témoignage","Consécration, Humilité, Respect, Intégrité, Service, Transparence","Christ, Humilité, Renouveau, Intercession, Sanctification, Transformation","Communion, Hospitalité, Révélation, Illumination, Sacrifice, Témoignage"],correct:1,expl:"C=Consécration, H=Humilité, R=Respect, I=Intégrité, S=Service, T=Transparence."},
+  {theme:"Valeurs C.H.R.I.S.T",q:"En plus de C.H.R.I.S.T, quelles deux valeurs complètent les valeurs du ministère ?",options:["Espérance et Foi","Amour et Fiabilité","Prière et Jeûne","Joie et Paix"],correct:1,expl:"Les valeurs complètes : C.H.R.I.S.T + AMOUR + FIABILITÉ."},
+  {theme:"Prendre soin d'une âme",q:"Que signifie le code PVCI ?",options:["Prédication, Vision, Communion, Intercession","Prière, Visite, Conseil, Interaction","Parole, Vérité, Christ, Illumination","Prophétie, Vision, Confirmation, Imposition"],correct:1,expl:"PVCI = Prière, Visite, Conseil, Interaction. Un code pratique pour prendre soin d'une âme et être un puissant berger (Jean 17:12)."},
+  {theme:"Anti-dispersion",q:"Qu'est-ce que l'« anti-dispersion » ?",options:["Un programme pour éviter que les conseillers quittent l'église","Une dynamique qui consiste à rester constamment en contact avec les jeunes","Un système de sécurité pour les événements","Une formation pour garder les jeunes concentrés pendant les cultes"],correct:1,expl:"L'anti-dispersion : une dynamique qui consiste à rester constamment en contact avec les jeunes pour éviter qu'ils s'éloignent."}
+];
+
+let cur=0,score=0,answered=false,results=[],playerName='';
+const SK='mip_lb_v3';
+
+function showTab(tab,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  btn.classList.add('active');
+  if(tab==='leaderboard')renderLeaderboard();
+  if(tab==='kahoot')renderKahoot();
+}
+
+function startQuiz(){
+  const n=document.getElementById('playerName').value.trim();
+  if(!n){document.getElementById('playerName').focus();document.getElementById('playerName').style.borderColor='var(--wrong)';return;}
+  playerName=n;
+  document.getElementById('nameEntry').style.display='none';
+  document.getElementById('quizGame').style.display='block';
+  cur=0;score=0;answered=false;results=[];
+  renderQ();
+}
+
+function renderQ(){
+  answered=false;
+  const q=Q[cur],total=Q.length;
+  document.getElementById('progressFill').style.width=(cur/total*100)+'%';
+  document.getElementById('progressLabel').textContent=(cur+1)+' / '+total;
+  document.getElementById('qNumber').textContent='QUESTION '+String(cur+1).padStart(2,'0')+' — '+q.theme.toUpperCase();
+  document.getElementById('qText').textContent=q.q;
+  const L=['A','B','C','D'],g=document.getElementById('optionsGrid');
+  g.innerHTML='';
+  q.options.forEach((opt,i)=>{
+    const b=document.createElement('button');
+    b.className='option-btn';
+    b.innerHTML=`<span class="letter">${L[i]}</span><span>${opt}</span>`;
+    b.onclick=()=>pick(i);
+    g.appendChild(b);
+  });
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';fb.innerHTML='';
+  document.getElementById('nextBtn').className='next-btn';
+  const c=document.getElementById('questionCard');
+  c.style.animation='none';c.offsetHeight;c.style.animation='slideIn .35s ease';
+}
+
+function pick(idx){
+  if(answered)return;
+  answered=true;
+  const q=Q[cur];
+  const btns=document.querySelectorAll('.option-btn');
+  btns.forEach(b=>b.disabled=true);
+  const ok=idx===q.correct;
+  if(ok)score++;
+  btns[idx].classList.add(ok?'correct':'wrong');
+  if(!ok)btns[q.correct].classList.add('correct');
+  const fb=document.getElementById('feedback');
+  fb.className='feedback show '+(ok?'correct-fb':'wrong-fb');
+  fb.innerHTML=`<strong>${ok?'✓ Bonne réponse !':'✗ Pas tout à fait…'}</strong>${q.expl}`;
+  results.push({theme:q.theme,correct:ok});
+  document.getElementById('nextBtn').className='next-btn show';
+}
+
+function nextQuestion(){
+  cur++;
+  if(cur>=Q.length)showScore();
+  else renderQ();
+}
+
+function showScore(){
+  document.getElementById('quizGame').style.display='none';
+  document.getElementById('scoreSection').style.display='block';
+  const total=Q.length,pct=Math.round(score/total*100);
+  document.getElementById('scoreCircle').style.setProperty('--pct',pct+'%');
+  document.getElementById('scoreNum').innerHTML=score+'<small>/'+total+'</small>';
+  let title,msg;
+  if(pct===100){title='PARFAIT !';msg='Tu maîtrises le MIP sur le bout des doigts. Gloire à Dieu !';}
+  else if(pct>=80){title='EXCELLENT !';msg='Très bon score ! Tu connais bien le ministère.';}
+  else if(pct>=60){title='BIEN JOUÉ !';msg='Bon début ! Relis les pôles et les valeurs pour être au top.';}
+  else{title='À REVOIR';msg='Pas de panique ! Relis la présentation du MIP et retente le quiz.';}
+  document.getElementById('scoreTitle').textContent=title;
+  document.getElementById('scoreMsg').textContent=msg;
+  const themes={};
+  results.forEach(r=>{if(!themes[r.theme])themes[r.theme]={ok:0,tot:0};themes[r.theme].tot++;if(r.correct)themes[r.theme].ok++;});
+  const bd=document.getElementById('scoreBreakdown');
+  bd.innerHTML='<div class="breakdown-title">RÉCAPITULATIF PAR THÈME</div>';
+  Object.entries(themes).forEach(([t,d])=>{
+    const div=document.createElement('div');div.className='breakdown-item';
+    div.innerHTML=`<span>${t}</span><span class="${d.ok===d.tot?'ok':'ko'}">${d.ok} / ${d.tot}</span>`;
+    bd.appendChild(div);
+  });
+  saveScore(playerName,score,total);
+}
+
+function restartQuiz(){
+  document.getElementById('scoreSection').style.display='none';
+  document.getElementById('nameEntry').style.display='block';
+  document.getElementById('playerName').value='';
+  document.getElementById('playerName').style.borderColor='';
+}
+
+function saveScore(name,sc,total){
+  let lb=getLB();
+  lb.push({name,score:sc,total,pct:Math.round(sc/total*100),date:new Date().toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})});
+  lb.sort((a,b)=>b.pct-a.pct||b.score-a.score);
+  try{localStorage.setItem(SK,JSON.stringify(lb));}catch(e){}
+}
+
+function getLB(){try{return JSON.parse(localStorage.getItem(SK)||'[]');}catch{return[];}}
+
+function renderLeaderboard(){
+  const lb=getLB(),el=document.getElementById('lbContent');
+  if(!lb.length){el.innerHTML='<div class="lb-empty">Aucun score pour l\'instant.<br>Fais le quiz pour apparaître ici !</div>';return;}
+  const medals=['🥇','🥈','🥉'];
+  el.innerHTML=lb.map((e,i)=>`
+    <div class="lb-row">
+      <div class="lb-rank">${i<3?medals[i]:'#'+(i+1)}</div>
+      <div style="flex:1">
+        <div class="lb-name">${esc(e.name)}</div>
+        <div class="lb-bar-wrap"><div class="lb-bar" style="width:${e.pct}%"></div></div>
+      </div>
+      <div style="text-align:right">
+        <div><span class="lb-score">${e.score}/${e.total}</span><span class="lb-pct">(${e.pct}%)</span></div>
+        <div class="lb-date">${e.date}</div>
+      </div>
+    </div>`).join('');
+}
+
+function clearLeaderboard(){
+  if(confirm('Effacer tous les scores ?')){localStorage.removeItem(SK);renderLeaderboard();}
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function renderKahoot(){
+  const L=['A','B','C','D'],C=['🔴','🔵','🟡','🟢'];
+  document.getElementById('kahootList').innerHTML=Q.map((q,qi)=>`
+    <div class="kahoot-q">
+      <div class="kq-num">Q${qi+1} — ${q.theme}</div>
+      <div class="kq-text">${q.q}</div>
+      <div class="kq-options">${q.options.map((o,i)=>`<div class="kq-opt ${i===q.correct?'answer':''}"><span class="tag">${C[i]} ${L[i]}.</span>${o}${i===q.correct?' ✓':''}</div>`).join('')}</div>
+    </div>`).join('');
+}
+
+function copyAllKahoot(){
+  const L=['A','B','C','D'];
+  const text=Q.map((q,i)=>`Q${i+1}. [${q.theme}]\n${q.q}\n`+q.options.map((o,j)=>`  ${L[j]}. ${o}${j===q.correct?' ← BONNE RÉPONSE':''}`).join('\n')).join('\n\n─────────────────────────\n\n');
+  navigator.clipboard.writeText(text).then(()=>{
+    const b=document.getElementById('copiedBadge');b.classList.add('show');
+    setTimeout(()=>b.classList.remove('show'),2500);
+  });
+}
+</script>
+</body>
+</html>
